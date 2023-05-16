@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -21,8 +22,14 @@ func findEntries(siteURL string) ([]Entry, error) {
 	if err != nil {
 		return nil, err
 	}
+	pat := regexp.MustCompile(`.*/cards/([0-9]+)/card([0-9]+).html$`)
 	doc.Find("ol li a").Each(func(n int, elem *goquery.Selection) {
-		println(elem.Text(), elem.AttrOr("href", ""))
+		token := pat.FindStringSubmatch(elem.AttrOr("href", ""))
+		if len(token) != 3 {
+			return
+		}
+		pageURL := fmt.Sprintf("https://www.aozora.gr.jp/cards/%s/card%s.html", token[1], token[2])
+		println(pageURL)
 	})
 	return nil, nil
 }
