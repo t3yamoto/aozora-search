@@ -13,11 +13,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const usage = `
+Usage of ./aozora-search [sub-command] [...]:
+    -d string
+        database (default "database.sqlite")
+
+Sub-commands:
+    authors
+    titles  [AuthorID]
+    content [AuthorID] [TitleID]
+    query   [Query]
+`
+
 func main() {
 	var dsn string
 	flag.StringVar(&dsn, "d", "database.sqlite", "database")
 	flag.Usage = func() {
-		usage := "usage\n"
 		fmt.Print(usage)
 	}
 	flag.Parse()
