@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/ikawaha/kagome-dict/ipa"
+	"github.com/ikawaha/kagome/v2/tokenizer"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -45,6 +48,12 @@ func main() {
 			os.Exit(3)
 		}
 		err = showContent(db, flag.Arg(1), flag.Arg(2))
+	case "query":
+		if flag.NArg() != 2 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		err = queryContent(db, flag.Arg(1))
 	}
 
 	if err != nil {
@@ -97,5 +106,43 @@ func showContent(db *sql.DB, authorID string, titleID string) error {
 		return err
 	}
 	fmt.Println(content)
+	return nil
+}
+
+func queryContent(db *sql.DB, query string) error {
+	t, err := tokenizer.New(ipa.Dict(), tokenizer.OmitBosEos())
+	if err != nil {
+		return err
+	}
+
+	seg := t.Wakati(query)
+	rows, err := db.Query(`
+        SELECT
+            a.author_id,
+            a.author,
+            c.title_id,
+            c.title
+        FROM
+            contents c
+        INNER JOIN authors a
+            ON a.author_id = c.author_id
+        INNER JOIN contents_fts f
+            ON c.rowid = f.docid
+            AND words MATCH ?
+    `, strings.Join(seg, " "))
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var authorID, author string
+		var titleID, title string
+		err = rows.Scan(&authorID, &author, &titleID, &title)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s % 5s: %s (%s)\n", authorID, titleID, title, author)
+	}
 	return nil
 }
