@@ -33,6 +33,12 @@ func main() {
 	switch flag.Arg(0) {
 	case "authors":
 		err = showAuthors(db)
+	case "titles":
+		if flag.NArg() != 2 {
+			flag.Usage()
+			os.Exit(2)
+		}
+		err = showTitles(db, flag.Arg(1))
 	}
 
 	if err != nil {
@@ -45,6 +51,8 @@ func showAuthors(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var authorId string
 		var author string
@@ -53,6 +61,25 @@ func showAuthors(db *sql.DB) error {
 			return err
 		}
 		fmt.Println(authorId, author)
+	}
+	return nil
+}
+
+func showTitles(db *sql.DB, authorID string) error {
+	rows, err := db.Query(`SELECT title_id, title FROM contents WHERE author_id = ?`, authorID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var titleId string
+		var title string
+		err = rows.Scan(&titleId, &title)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("% 5s %s\n", titleId, title)
 	}
 	return nil
 }
