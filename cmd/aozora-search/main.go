@@ -39,6 +39,12 @@ func main() {
 			os.Exit(2)
 		}
 		err = showTitles(db, flag.Arg(1))
+	case "content":
+		if flag.NArg() != 3 {
+			flag.Usage()
+			os.Exit(3)
+		}
+		err = showContent(db, flag.Arg(1), flag.Arg(2))
 	}
 
 	if err != nil {
@@ -81,5 +87,15 @@ func showTitles(db *sql.DB, authorID string) error {
 		}
 		fmt.Printf("% 5s %s\n", titleId, title)
 	}
+	return nil
+}
+
+func showContent(db *sql.DB, authorID string, titleID string) error {
+	var content string
+	err := db.QueryRow(`SELECT content FROM contents WHERE author_id = ? AND title_id = ?`, authorID, titleID).Scan(&content)
+	if err != nil {
+		return err
+	}
+	fmt.Println(content)
 	return nil
 }
